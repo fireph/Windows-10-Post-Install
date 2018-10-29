@@ -20,26 +20,40 @@ $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
 
 # https://superuser.com/a/1067892
 # disable wake for enabled scheduled tasks that are allowed to wake
+$errorDisabling = $false
 Get-ScheduledTask |
 ?{ $_.Settings.WakeToRun -eq $true -and $_.State -ne 'Disabled' } |
 %{
-    write-host $_
-    $_.Settings.WakeToRun = $false;
-    Set-ScheduledTask $_
+    Try {
+        write-host $_
+        $_.Settings.WakeToRun = $false;
+        Set-ScheduledTask $_
+    } Catch {
+        $errorDisabling = $true
+    }
+}
+
+# Run Tasks Scheduler to disable remaining wake tasks if an error occurred
+if ($errorDisabling) {
+    write-host "There was an error disabling wake from sleep on some tasks. Running Task Scheduler with special permissions..."
+    $psexecPath = "$PSScriptRoot/psexec.exe"
+    Invoke-WebRequest -Uri "https://github.com/DungFu/Windows-10-Post-Install/blob/master/PsExec.exe?raw=true" -OutFile $psexecPath
+    Start-Process -Filepath $psexecPath -ArgumentList @("-i", "-s control schedtasks") -Wait
+    Remove-Item -Path $psexecPath
 }
 
 # disable wake for devices that are allowed to wake (list of wake capable devices: powercfg -devicequery wake_from_any)
 powercfg -devicequery wake_armed |
 %{
-    write-host $_
-    if ($_ -notmatch '^(NONE)?$')
-    { powercfg -devicedisablewake $_ }
+    if (($_ -notmatch '^(NONE)?$') -and ($_ -notmatch 'mouse') -and ($_ -notmatch 'keyboard')) {
+        powercfg -devicedisablewake $_
+        write-host "Disabled wake from sleep on: $_"
+    }
 }
 
 # disable wake timers for all power schemes
 powercfg -list | Select-String 'GUID' |
 %{
-    write-host $_
     $guid = $_ -replace '^.*:\s+(\S+?)\s+.*$', '$1'
     powercfg -setdcvalueindex $guid SUB_SLEEP RTCWAKE 0
     powercfg -setacvalueindex $guid SUB_SLEEP RTCWAKE 0
@@ -49,7 +63,6 @@ powercfg -list | Select-String 'GUID' |
 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU\AUPowerManagement', 
 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance\WakeUp' |
 %{
-    write-host $_
     $key = split-path $_
     $name = split-path $_ -leaf
     $type = 'DWORD'
