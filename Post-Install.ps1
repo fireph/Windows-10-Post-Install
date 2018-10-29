@@ -36,10 +36,14 @@ Get-ScheduledTask |
 # Run Tasks Scheduler to disable remaining wake tasks if an error occurred
 if ($errorDisabling) {
     write-host "There was an error disabling wake from sleep on some tasks. Running Task Scheduler with special permissions..."
-    $psexecPath = "$PSScriptRoot/psexec.exe"
-    Invoke-WebRequest -Uri "https://github.com/DungFu/Windows-10-Post-Install/blob/master/PsExec.exe?raw=true" -OutFile $psexecPath
+    $pstoolsZipPath = "$PSScriptRoot/PSTools.zip"
+    $pstoolsPath = "$PSScriptRoot/PSTools"
+    $psexecPath = "$PSScriptRoot/PSTools/PsExec.exe"
+    $wc.DownloadFile("https://download.sysinternals.com/files/PSTools.zip", $pstoolsZipPath)
+    Expand-Archive -Path $pstoolsZipPath -DestinationPath $pstoolsPath -Force
     Start-Process -Filepath $psexecPath -ArgumentList @("-i", "-s control schedtasks") -Wait
-    Remove-Item -Path $psexecPath
+    Remove-Item -Path $pstoolsZipPath
+    Remove-Item -Path $pstoolsPath -Recurse
 }
 
 # disable wake for devices that are allowed to wake (list of wake capable devices: powercfg -devicequery wake_from_any)
