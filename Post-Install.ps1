@@ -37,6 +37,9 @@ if ($confirmation -eq 'y') {
     }
 }
 
+# Disable UAC
+Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name ConsentPromptBehaviorAdmin -Value 0
+
 # Explorer launching to 'This PC'
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name LaunchTo -Value 1
 
