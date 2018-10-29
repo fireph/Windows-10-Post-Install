@@ -69,7 +69,8 @@ if ($confirmation -eq 'y') {
             $qtUrl = "http://download.qt.io/official_releases/qt/" + $majorVersion + "/" + $totalVersion + "/qt-opensource-windows-x86-" + $totalVersion + ".exe"
             $qtFilePath = "$PSScriptRoot/qt-opensource-windows-x86-" + $totalVersion + ".exe"
             Write-Host "Downloading Qt from url:" $qtUrl
-            $wc.DownloadFile($qtUrl, $qtFilePath)
+            Import-Module BitsTransfer
+            Start-BitsTransfer -Source $qtUrl -Destination $qtFilePath
             Start-Process -Filepath $qtFilePath -Wait
         } else {
             Write-Error "Qt version not in valid format"
