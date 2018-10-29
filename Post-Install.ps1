@@ -17,13 +17,23 @@ $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
 [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
 [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
 
-<#
-
-$powerPlan = Get-WmiObject -Namespace root\cimv2\power -Class Win32_PowerPlan -Filter "ElementName = 'High Performance'"
-$powerPlan = Get-CimInstance -Name root\cimv2\power -Class win32_PowerPlan -Filter "ElementName = 'High Performance'"
-$powerPlan.Activate()
-
-#>
+$powerPlanName = "High Performance"
+$confirmation = Read-Host "Would you like to set the power plan to '$powerPlanName'? (y/n)"
+if ($confirmation -eq 'y') {
+    $powerPlan = Get-WmiObject -Namespace root\cimv2\power -Class Win32_PowerPlan -Filter "ElementName = '$powerPlanName'"
+    if ($powerPlan -ne $null) {
+        $powerPlanInstanceId = $powerPlan.InstanceID
+        $powerPlanInstanceId -match ".*{([a-z0-9-]+)}"
+        if ($Matches.Count -ge 2) {
+            powercfg /setactive $Matches[1]
+            Write-Host "Power plan set to '$powerPlanName'"
+        } else {
+            Write-Error "An error occurred when setting the power plan to '$powerPlanName'"
+        }
+    } else {
+        Write-Error "Could not find power plan: '$powerPlanName'"
+    }
+}
 
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name LaunchTo -Value 1
 
@@ -63,7 +73,7 @@ if ($confirmation -eq 'y') {
     }
     if ($qtVersion -ne $null) {
         $majorVersion = $qtVersion -match "v\d+\.\d+"
-        if ($Matches.Length -ge 1) {
+        if ($Matches.Count -ge 1) {
             $majorVersion = $Matches[0].substring(1)
             $totalVersion = $qtVersion.substring(1)
             $qtUrl = "http://download.qt.io/official_releases/qt/" + $majorVersion + "/" + $totalVersion + "/qt-opensource-windows-x86-" + $totalVersion + ".exe"
