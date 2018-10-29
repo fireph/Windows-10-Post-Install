@@ -18,6 +18,48 @@ $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
 [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
 [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
 
+# https://superuser.com/a/1067892
+# disable wake for enabled scheduled tasks that are allowed to wake
+Get-ScheduledTask |
+?{ $_.Settings.WakeToRun -eq $true -and $_.State -ne 'Disabled' } |
+%{
+    write-host $_
+    $_.Settings.WakeToRun = $false;
+    Set-ScheduledTask $_
+}
+
+# disable wake for devices that are allowed to wake (list of wake capable devices: powercfg -devicequery wake_from_any)
+powercfg -devicequery wake_armed |
+%{
+    write-host $_
+    if ($_ -notmatch '^(NONE)?$')
+    { powercfg -devicedisablewake $_ }
+}
+
+# disable wake timers for all power schemes
+powercfg -list | Select-String 'GUID' |
+%{
+    write-host $_
+    $guid = $_ -replace '^.*:\s+(\S+?)\s+.*$', '$1'
+    powercfg -setdcvalueindex $guid SUB_SLEEP RTCWAKE 0
+    powercfg -setacvalueindex $guid SUB_SLEEP RTCWAKE 0
+}
+
+# disable wake for automatic updates and for automatic maintenance
+'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU\AUPowerManagement', 
+'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance\WakeUp' |
+%{
+    write-host $_
+    $key = split-path $_
+    $name = split-path $_ -leaf
+    $type = 'DWORD'
+    $value = 0
+    if (!(Test-Path $key))
+    { New-Item -Path $key -Force | Out-Null }
+    if ((Get-ItemProperty $key $name 2>$null).$name -ne $value)
+    { Set-ItemProperty $key $name $value -type $type }
+}
+
 # Setting power plan
 $powerPlanName = "High Performance"
 $confirmation = Read-Host "Would you like to set the power plan to '$powerPlanName'? (y/n)"
