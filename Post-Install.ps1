@@ -2,6 +2,7 @@
 
 $wc = New-Object System.Net.WebClient
 
+# Ensure certificates/protocols work for https
 add-type @"
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
@@ -17,6 +18,7 @@ $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
 [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
 [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
 
+# Setting power plan
 $powerPlanName = "High Performance"
 $confirmation = Read-Host "Would you like to set the power plan to '$powerPlanName'? (y/n)"
 if ($confirmation -eq 'y') {
@@ -35,7 +37,12 @@ if ($confirmation -eq 'y') {
     }
 }
 
+# Explorer launching to 'This PC'
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name LaunchTo -Value 1
+
+# Enable automatic night light
+$nightLightSetting = [byte[]](0x02,0x00,0x00,0x00,0x4f,0x58,0x1e,0x1d,0xc9,0x6f,0xd4,0x01,0x00,0x00,0x00,0x00,0x43,0x42,0x01,0x00,0x02,0x01,0xca,0x14,0x0e,0x15,0x00,0xca,0x1e,0x0e,0x07,0x00,0xcf,0x28,0xc8,0x2a,0xca,0x32,0x0e,0x12,0x2e,0x0f,0x00,0xca,0x3c,0x0e,0x07,0x2e,0x1f,0x00,0x00)
+Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\`$`$windows.data.bluelightreduction.settings\Current -Name Data -Value $nightLightSetting
 
 if (!(Get-Command choco -errorAction SilentlyContinue)) {
     Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
