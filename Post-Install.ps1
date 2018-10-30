@@ -111,7 +111,7 @@ if (!(Get-Command choco -errorAction SilentlyContinue)) {
 } else {
     choco upgrade chocolatey
 }
-choco install -y colemak googlechrome visualstudio2017community visualstudio2017-workload-nativedesktop geforce-experience steam
+choco install -y colemak googlechrome visualstudio2017community visualstudio2017-workload-nativedesktop geforce-experience steam logitechgaming
 
 $apps = [ordered]@{
     "Battle.net"="https://us.battle.net/download/getInstaller?os=win&installer=Battle.net-Setup.exe";
