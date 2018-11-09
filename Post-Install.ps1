@@ -2,6 +2,8 @@
 
 $wc = New-Object System.Net.WebClient
 
+New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT
+
 # Ensure certificates/protocols work for https
 add-type @"
 using System.Net;
@@ -109,6 +111,9 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer 
 # Enable automatic night light
 $nightLightSetting = [byte[]](0x02,0x00,0x00,0x00,0x4f,0x58,0x1e,0x1d,0xc9,0x6f,0xd4,0x01,0x00,0x00,0x00,0x00,0x43,0x42,0x01,0x00,0x02,0x01,0xca,0x14,0x0e,0x15,0x00,0xca,0x1e,0x0e,0x07,0x00,0xcf,0x28,0xc8,0x2a,0xca,0x32,0x0e,0x12,0x2e,0x0f,0x00,0xca,0x3c,0x0e,0x07,0x2e,0x1f,0x00,0x00)
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\`$`$windows.data.bluelightreduction.settings\Current -Name Data -Value $nightLightSetting
+
+# Disable OneDrive in Explorer
+Set-ItemProperty -Path HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6} -Name System.IsPinnedToNameSpaceTree -Value 0
 
 if (!(Get-Command choco -errorAction SilentlyContinue)) {
     Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
