@@ -101,6 +101,11 @@ if ($confirmation -eq 'y') {
 # Disable UAC
 Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name ConsentPromptBehaviorAdmin -Value 0
 
+# Disable Mouse Acceleration
+Set-ItemProperty -Path HKCU:\Control Panel\Mouse -Name MouseSpeed -Value 0
+Set-ItemProperty -Path HKCU:\Control Panel\Mouse -Name MouseThreshold1 -Value 0
+Set-ItemProperty -Path HKCU:\Control Panel\Mouse -Name MouseThreshold2 -Value 0
+
 # Explorer launching to 'This PC'
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name LaunchTo -Value 1
 
@@ -127,14 +132,41 @@ $apps = [ordered]@{
     "PS4 Remote Play"="https://remoteplay.dl.playstation.net/remoteplay/module/win/RemotePlayInstaller.exe"
 }
 
+$res = Invoke-WebRequest "https://www.samsung.com/semiconductor/minisite/ssd/download/tools/" -UseBasicParsing
+$SMSelect = $res.Content -split '\n' | Select-String -Pattern "(http.*/Samsung_Magician_Installer\.zip)"
+if ($SMSelect.Matches.Count -ge 1) {
+    $SMUrl = $SMSelect.Matches[0].Value
+    $apps["Samsung Magician"] = $SMUrl
+} else {
+    Write-Error "Could not find download url for Samsung Magician"
+}
+
 Foreach ($h in $apps.GetEnumerator()) {
     $confirmation = Read-Host "Would you like to install $($h.Name)? (y/n)"
     if ($confirmation -ne 'y') {continue}
     Write-Host "Installing" $h.Name
-    $outpath = "$PSScriptRoot/"+ $h.Name + ".exe"
-    $wc.DownloadFile($h.Value, $outpath)
-    Start-Process -Filepath $outpath -Wait
-    Remove-Item -Path $outpath
+    if ($h.Value.EndsWith(".zip")) {
+        $zipOutpath = "$PSScriptRoot/"+ $h.Name + ".zip"
+        $folderOutpath = "$PSScriptRoot/"+ $h.Name
+        $wc.DownloadFile($h.Value, $zipOutpath)
+        Expand-Archive -Path $zipOutpath -DestinationPath $folderOutpath -Force
+        Remove-Item -Path $zipOutpath
+        $unzipedFiles = Get-ChildItem -Path $folderOutpath
+        Foreach ($file in $unzipedFiles) {
+            if ($file.Extension -eq ".exe" -and ($file.Name -match "install" -or $file.Name -match "setup")) {
+                Start-Process -Filepath $file.PSPath -Wait
+                Remove-Item -Path $folderOutpath -Recurse
+                break
+            }
+        }
+    } elseif ($h.Value.EndsWith(".exe")) {
+        $outpath = "$PSScriptRoot/"+ $h.Name + ".exe"
+        $wc.DownloadFile($h.Value, $outpath)
+        Start-Process -Filepath $outpath -Wait
+        Remove-Item -Path $outpath
+    } else {
+        Write-Error "Download not a valid exe or zip file"
+    }
 }
 
 $confirmation = Read-Host "Would you like to install Qt? (y/n)"
