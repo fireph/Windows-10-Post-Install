@@ -129,7 +129,8 @@ choco install -y colemak googlechrome visualstudio2017community visualstudio2017
 
 $apps = [ordered]@{
     "Battle.net"="https://us.battle.net/download/getInstaller?os=win&installer=Battle.net-Setup.exe";
-    "PS4 Remote Play"="https://remoteplay.dl.playstation.net/remoteplay/module/win/RemotePlayInstaller.exe"
+    "PS4 Remote Play"="https://remoteplay.dl.playstation.net/remoteplay/module/win/RemotePlayInstaller.exe";
+    "Oculus Rift Software"="https://www.oculus.com/download_app/?id=1582076955407037"
 }
 
 $res = Invoke-WebRequest "https://www.samsung.com/semiconductor/minisite/ssd/download/tools/" -UseBasicParsing
