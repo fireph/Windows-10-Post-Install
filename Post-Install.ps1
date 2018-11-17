@@ -102,9 +102,9 @@ if ($confirmation -eq 'y') {
 Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name ConsentPromptBehaviorAdmin -Value 0
 
 # Disable Mouse Acceleration
-Set-ItemProperty -Path HKCU:\Control Panel\Mouse -Name MouseSpeed -Value 0
-Set-ItemProperty -Path HKCU:\Control Panel\Mouse -Name MouseThreshold1 -Value 0
-Set-ItemProperty -Path HKCU:\Control Panel\Mouse -Name MouseThreshold2 -Value 0
+Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name MouseSpeed -Value 0
+Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name MouseThreshold1 -Value 0
+Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name MouseThreshold2 -Value 0
 
 # Explorer launching to 'This PC'
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name LaunchTo -Value 1
@@ -118,14 +118,17 @@ $nightLightSetting = [byte[]](0x02,0x00,0x00,0x00,0x4f,0x58,0x1e,0x1d,0xc9,0x6f,
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\`$`$windows.data.bluelightreduction.settings\Current -Name Data -Value $nightLightSetting
 
 # Disable OneDrive in Explorer
-Set-ItemProperty -Path HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6} -Name System.IsPinnedToNameSpaceTree -Value 0
+# Set-ItemProperty -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name System.IsPinnedToNameSpaceTree -Value 0
 
-if (!(Get-Command choco -errorAction SilentlyContinue)) {
-    Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-} else {
-    choco upgrade chocolatey
+$confirmation = Read-Host "Would you like to install Chocolatey? (y/n)"
+if ($confirmation -eq 'y') {
+    if (!(Get-Command choco -errorAction SilentlyContinue)) {
+        Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+    } else {
+        choco upgrade chocolatey
+    }
+    choco install -y colemak googlechrome visualstudio2017community visualstudio2017-workload-nativedesktop geforce-experience steam logitechgaming
 }
-choco install -y colemak googlechrome visualstudio2017community visualstudio2017-workload-nativedesktop geforce-experience steam logitechgaming
 
 $apps = [ordered]@{
     "Battle.net"="https://us.battle.net/download/getInstaller?os=win&installer=Battle.net-Setup.exe";
@@ -160,13 +163,11 @@ Foreach ($h in $apps.GetEnumerator()) {
                 break
             }
         }
-    } elseif ($h.Value.EndsWith(".exe")) {
+    } else {
         $outpath = "$PSScriptRoot/"+ $h.Name + ".exe"
         $wc.DownloadFile($h.Value, $outpath)
         Start-Process -Filepath $outpath -Wait
         Remove-Item -Path $outpath
-    } else {
-        Write-Error "Download not a valid exe or zip file"
     }
 }
 
