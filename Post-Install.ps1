@@ -127,7 +127,7 @@ if ($confirmation -eq 'y') {
     } else {
         choco upgrade chocolatey
     }
-    choco install -y colemak googlechrome visualstudio2017community visualstudio2017-workload-nativedesktop geforce-experience steam logitechgaming
+    choco install -y colemak googlechrome visualstudio2017community visualstudio2017-workload-nativedesktop geforce-experience steam logitechgaming epicgameslauncher
 }
 
 $apps = [ordered]@{
