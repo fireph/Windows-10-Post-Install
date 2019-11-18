@@ -125,60 +125,67 @@ Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer 
 Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name ShowRecent -Value 0
 
 # Enable automatic night light
-$nightLightSetting = [byte[]](0x02,0x00,0x00,0x00,0x4f,0x58,0x1e,0x1d,0xc9,0x6f,0xd4,0x01,0x00,0x00,0x00,0x00,0x43,0x42,0x01,0x00,0x02,0x01,0xca,0x14,0x0e,0x15,0x00,0xca,0x1e,0x0e,0x07,0x00,0xcf,0x28,0xc8,0x2a,0xca,0x32,0x0e,0x12,0x2e,0x0f,0x00,0xca,0x3c,0x0e,0x07,0x2e,0x1f,0x00,0x00)
-Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\`$`$windows.data.bluelightreduction.settings\Current -Name Data -Value $nightLightSetting
+$confirmation = Read-Host "Would you like to enable automatic night light? (y/n)"
+if ($confirmation -eq 'y') {
+    $nightLightSetting = [byte[]](0x02,0x00,0x00,0x00,0x4f,0x58,0x1e,0x1d,0xc9,0x6f,0xd4,0x01,0x00,0x00,0x00,0x00,0x43,0x42,0x01,0x00,0x02,0x01,0xca,0x14,0x0e,0x15,0x00,0xca,0x1e,0x0e,0x07,0x00,0xcf,0x28,0xc8,0x2a,0xca,0x32,0x0e,0x12,0x2e,0x0f,0x00,0xca,0x3c,0x0e,0x07,0x2e,0x1f,0x00,0x00)
+    Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\Cache\DefaultAccount\`$`$windows.data.bluelightreduction.settings\Current -Name Data -Value $nightLightSetting
+}
 
 # Disable OneDrive in Explorer
 # Set-ItemProperty -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name System.IsPinnedToNameSpaceTree -Value 0
 
-$confirmation = Read-Host "Would you like to install Chocolatey? (y/n)"
+$chocoApps = "colemak microsoft-edge-insider googlechrome visualstudio2017community visualstudio2017-workload-nativedesktop geforce-experience steam logitechgaming epicgameslauncher origin google-backup-and-sync"
+$confirmation = Read-Host "Would you like to install Chocolatey ('$chocoApps')? (y/n)"
 if ($confirmation -eq 'y') {
     if (!(Get-Command choco -errorAction SilentlyContinue)) {
         Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
     } else {
         choco upgrade chocolatey
     }
-    choco install -y colemak googlechrome visualstudio2017community visualstudio2017-workload-nativedesktop geforce-experience steam logitechgaming epicgameslauncher origin google-backup-and-sync
+    choco install -y $chocoApps
 }
 
-$apps = [ordered]@{
-    "Battle.net"="https://us.battle.net/download/getInstaller?os=win&installer=Battle.net-Setup.exe";
-    "PS4 Remote Play"="https://remoteplay.dl.playstation.net/remoteplay/module/win/RemotePlayInstaller.exe";
-    "Oculus Rift Software"="https://www.oculus.com/download_app/?id=1582076955407037"
-}
+$confirmation = Read-Host "Would you like to install non-Chocolatey apps (Battle.net, PS4 Remote Play, Oculus)? (y/n)"
+if ($confirmation -eq 'y') {
+    $apps = [ordered]@{
+        "Battle.net"="https://us.battle.net/download/getInstaller?os=win&installer=Battle.net-Setup.exe";
+        "PS4 Remote Play"="https://remoteplay.dl.playstation.net/remoteplay/module/win/RemotePlayInstaller.exe";
+        "Oculus Rift Software"="https://www.oculus.com/download_app/?id=1582076955407037"
+    }
 
-$res = Invoke-WebRequest "https://www.samsung.com/semiconductor/minisite/ssd/download/tools/" -UseBasicParsing
-$SMSelect = $res.Content -split '\n' | Select-String -Pattern "(http.*/Samsung_Magician_Installer\.zip)"
-if ($SMSelect.Matches.Count -ge 1) {
-    $SMUrl = $SMSelect.Matches[0].Value
-    $apps["Samsung Magician"] = $SMUrl
-} else {
-    Write-Error "Could not find download url for Samsung Magician"
-}
-
-Foreach ($h in $apps.GetEnumerator()) {
-    $confirmation = Read-Host "Would you like to install $($h.Name)? (y/n)"
-    if ($confirmation -ne 'y') {continue}
-    Write-Host "Installing" $h.Name
-    if ($h.Value.EndsWith(".zip")) {
-        $zipOutpath = "$PSScriptRoot/"+ $h.Name + ".zip"
-        $folderOutpath = "$PSScriptRoot/"+ $h.Name
-        $wc.DownloadFile($h.Value, $zipOutpath)
-        Expand-Archive -Path $zipOutpath -DestinationPath $folderOutpath -Force
-        Remove-Item -Path $zipOutpath
-        $unzipedFiles = Get-ChildItem -Path $folderOutpath
-        Foreach ($file in $unzipedFiles) {
-            if ($file.Extension -eq ".exe" -and ($file.Name -match "install" -or $file.Name -match "setup")) {
-                Start-Process -Filepath $file.PSPath -Wait
-                Remove-Item -Path $folderOutpath -Recurse
-                break
-            }
-        }
+    $res = Invoke-WebRequest "https://www.samsung.com/semiconductor/minisite/ssd/download/tools/" -UseBasicParsing
+    $SMSelect = $res.Content -split '\n' | Select-String -Pattern "(http.*/Samsung_Magician_Installer\.zip)"
+    if ($SMSelect.Matches.Count -ge 1) {
+        $SMUrl = $SMSelect.Matches[0].Value
+        $apps["Samsung Magician"] = $SMUrl
     } else {
-        $outpath = "$PSScriptRoot/"+ $h.Name + ".exe"
-        $wc.DownloadFile($h.Value, $outpath)
-        Start-Process -Filepath $outpath -Wait
-        Remove-Item -Path $outpath
+        Write-Error "Could not find download url for Samsung Magician"
+    }
+
+    Foreach ($h in $apps.GetEnumerator()) {
+        $confirmation = Read-Host "Would you like to install $($h.Name)? (y/n)"
+        if ($confirmation -ne 'y') {continue}
+        Write-Host "Installing" $h.Name
+        if ($h.Value.EndsWith(".zip")) {
+            $zipOutpath = "$PSScriptRoot/"+ $h.Name + ".zip"
+            $folderOutpath = "$PSScriptRoot/"+ $h.Name
+            $wc.DownloadFile($h.Value, $zipOutpath)
+            Expand-Archive -Path $zipOutpath -DestinationPath $folderOutpath -Force
+            Remove-Item -Path $zipOutpath
+            $unzipedFiles = Get-ChildItem -Path $folderOutpath
+            Foreach ($file in $unzipedFiles) {
+                if ($file.Extension -eq ".exe" -and ($file.Name -match "install" -or $file.Name -match "setup")) {
+                    Start-Process -Filepath $file.PSPath -Wait
+                    Remove-Item -Path $folderOutpath -Recurse
+                    break
+                }
+            }
+        } else {
+            $outpath = "$PSScriptRoot/"+ $h.Name + ".exe"
+            $wc.DownloadFile($h.Value, $outpath)
+            Start-Process -Filepath $outpath -Wait
+            Remove-Item -Path $outpath
+        }
     }
 }
 
