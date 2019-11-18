@@ -109,6 +109,10 @@ if ($confirmation -eq 'y') {
     }
 }
 
+# Enable Long File Paths
+Set-ItemProperty -Path HKLM:\SYSTEM\ControlSet001\Control\FileSystem -Name LongPathsEnabled -Value 1
+Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name LongPathsEnabled -Value 1
+
 # Disable UAC
 Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name ConsentPromptBehaviorAdmin -Value 0
 
