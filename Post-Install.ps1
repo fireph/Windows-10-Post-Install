@@ -20,6 +20,17 @@ $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
 [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
 [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
 
+# Disable lock screen
+$lockScreenRegistryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization"
+$lockScreenName = "NoLockScreen"
+$lockScreenValue = 1
+IF (!(Test-Path $lockScreenRegistryPath)) {
+    New-Item -Path $lockScreenRegistryPath -Force | Out-Null
+    New-ItemProperty -Path $lockScreenRegistryPath -Name $lockScreenName -Value $lockScreenValue -PropertyType DWORD -Force | Out-Null
+} ELSE {
+    New-ItemProperty -Path $lockScreenRegistryPath -Name $lockScreenName -Value $lockScreenValue -PropertyType DWORD -Force | Out-Null
+}
+
 # https://superuser.com/a/1067892
 # disable wake for enabled scheduled tasks that are allowed to wake
 $errorDisabling = $false
