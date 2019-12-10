@@ -113,6 +113,9 @@ if ($confirmation -eq 'y') {
 Set-ItemProperty -Path HKLM:\SYSTEM\ControlSet001\Control\FileSystem -Name LongPathsEnabled -Value 1
 Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name LongPathsEnabled -Value 1
 
+# Remove One Drive from Explorer
+Set-ItemProperty -Path "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Name System.IsPinnedToNameSpaceTree -Value 0
+
 # Disable UAC
 Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name ConsentPromptBehaviorAdmin -Value 0
 
