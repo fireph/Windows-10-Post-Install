@@ -5,5 +5,5 @@ Setup your Windows 10 machine after an install in a flash!
 
 Run this code in an admin Powershell window:
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/DungFu/Windows-10-Post-Install/master/Post-Install.ps1'))
+Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/fireph/Windows-10-Post-Install/master/Post-Install.ps1'))
 ```
